@@ -22,7 +22,18 @@ const returnBook = catchAsync(
       statusCode: 200,
       success: true,
       message: "Book returned successfully",
-      data: result,
+    });
+  }
+);
+
+const overDueBook = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { message, data } = await BorrowReturnService.overDueBook();
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message,
+      data,
     });
   }
 );
@@ -30,4 +41,5 @@ const returnBook = catchAsync(
 export const BorrowReturnController = {
   borrowABook,
   returnBook,
+  overDueBook,
 };

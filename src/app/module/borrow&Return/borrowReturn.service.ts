@@ -23,7 +23,11 @@ const borrowABook = async (payload: BorrowRecord) => {
     throw new AppError(400, "No copies of this book are currently available.");
 
   const isAlreadySameBookTaken = await configPrisma.borrowRecord.findFirst({
-    where: { bookId: payload?.bookId, memberId: payload?.memberId },
+    where: {
+      bookId: payload?.bookId,
+      memberId: payload?.memberId,
+      returnDate: null,
+    },
   });
   if (isAlreadySameBookTaken)
     throw new AppError(
@@ -53,11 +57,76 @@ const borrowABook = async (payload: BorrowRecord) => {
   return createBorrow;
 };
 
+/*
+1. Check borrowRecord existance
+2. Applying transaction to update borroww record return data with the increment of book availability
+*/
 const returnBook = async (borrowId: string) => {
+  const borrowRecordExist = await configPrisma.borrowRecord.findFirst({
+    where: { borrowId },
+  });
+  if (!borrowRecordExist) {
+    throw new AppError(404, "Invalid Borrow ID!");
+  } else if (borrowRecordExist.returnDate !== null) {
+    throw new AppError(400, "Book already returned");
+  }
+
+  await configPrisma.$transaction([
+    configPrisma.book.update({
+      where: { bookId: borrowRecordExist.bookId },
+      data: { availableCopies: { increment: 1 } },
+    }),
+    configPrisma.borrowRecord.update({
+      where: { borrowId },
+      data: { returnDate: new Date() },
+    }),
+  ]);
+
   return true;
+};
+
+const overDueBook = async () => {
+  const now = new Date(),
+    fourteenDaysAgo = new Date(now.setDate(now.getDate() - 14));
+
+  const result = await configPrisma.borrowRecord.findMany({
+    where: {
+      returnDate: null,
+      borrowDate: {
+        lt: fourteenDaysAgo,
+      },
+    },
+    select: {
+      borrowId: true,
+      borrowDate: true,
+      Book: {
+        select: { title: true },
+      },
+      Member: {
+        select: { name: true },
+      },
+    },
+  });
+
+  if (result.length > 0) {
+    const modifiedData = result.map((item) => ({
+      borrowId: item.borrowId,
+      bookTitle: item.Book.title,
+      borrowerName: item.Member.name,
+      overdueDays: new Date(
+        new Date().getTime() -
+          new Date(item.borrowDate).setDate(item.borrowDate.getDate() + 14)
+      ).getDate(),
+    }));
+
+    return { message: "Overdue borrow list fetched", data: modifiedData };
+  }
+
+  return { message: "No overdue books", data: [] };
 };
 
 export const BorrowReturnService = {
   borrowABook,
   returnBook,
+  overDueBook,
 };

@@ -4,16 +4,21 @@ type TResponseData<T> = {
   statusCode: number;
   success: boolean;
   message: string;
-  data: T;
+  data?: T;
 };
 
 const sendResponse = <T>(res: Response, data: TResponseData<T>) => {
-  res.status(data?.statusCode).json({
+  const responsePayload = {
     success: data.success,
     status: data.statusCode,
-    message: data?.message || "Successfully Work Done",
-    data: data.data,
-  });
+    message: data.message || "Successfully completed",
+  };
+
+  if (data.data) {
+    res.status(data.statusCode).json({ ...responsePayload, data: data.data });
+  } else {
+    res.status(data.statusCode).json(responsePayload);
+  }
 };
 
 export default sendResponse;
