@@ -8,15 +8,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const http_status_1 = __importDefault(require("http-status"));
 const notFound = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.status(http_status_1.default.NOT_FOUND).json({
+    res.status(404).json({
         success: false,
-        message: "API route not found",
+        status: 404,
+        message: "❌ API route not found ❌",
     });
 });
 exports.default = notFound;

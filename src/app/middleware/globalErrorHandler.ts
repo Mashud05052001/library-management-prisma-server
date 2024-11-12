@@ -8,15 +8,18 @@ const globalErrorhandler: ErrorRequestHandler = async (err, req, res, next) => {
     err instanceof Prisma.PrismaClientKnownRequestError &&
     err?.name === "PrismaClientKnownRequestError"
   ) {
-    message = `${err?.meta?.modelName} ${err?.meta?.cause}`;
+    if (err?.meta?.cause)
+      message = `${err?.meta?.modelName} ${err?.meta?.cause}`;
+    else if (err?.meta?.target && Array.isArray(err?.meta?.target)) {
+      message = err?.meta?.target.join(" ") + " must be unique";
+      message = message[0].toUpperCase() + message.slice(1);
+    }
   }
 
-  res.status(err?.status || err?.statusCode || 500).json({
+  res.status(statusCode).json({
     success: false,
-    statusCode,
+    status: statusCode,
     message,
-    // TODO : Remove it later
-    err,
   });
 };
 
