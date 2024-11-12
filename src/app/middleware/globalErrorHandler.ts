@@ -15,6 +15,7 @@ const globalErrorhandler: ErrorRequestHandler = async (err, req, res, next) => {
     success: false,
     statusCode,
     message,
+    // TODO : Remove it later
     err,
   });
 };
